@@ -89,8 +89,8 @@ Google Colab can be used to run experiments without requiring a powerful local c
 Run the following commands in a Colab notebook:
 
 ```python
-!git clone https://github.com/USERNAME/REPOSITORY.git
-%cd REPOSITORY
+!git clone https://github.com/michael-duer/medical-image-classification.git
+%cd medical-image-classification
 
 # Install uv
 !pip install uv

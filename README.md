@@ -82,11 +82,10 @@ Commit changes to `pyproject.toml` and `uv.lock` so everyone uses the same depen
 
 Google Colab can be used to run experiments without requiring a powerful local computer.
 
-1. Create or open your experiment notebook in Colab.
-2. Enable GPU acceleration if available.
-3. Clone the repository and install the project dependencies.
-
-Run the following commands in a Colab notebook:
+1. Open Colab and go to "File" -> "Open Notebook" -> "GitHub"
+2. Enter link/path of project: michael-duer/medical-images-classification
+3. Open desired jupyter notebook like `notebooks/00_simple_pipeline.ipynb`
+4. Clone repository, install uv + dependencies to add repository to Colab session (Note: Changes to file wont be saved to GitHub automatically. Save notebook as `.ipynd` file and push changes to repository):
 
 ```python
 !git clone https://github.com/michael-duer/medical-image-classification.git
@@ -107,15 +106,19 @@ Run scripts using:
 
 To import project modules directly into the Colab notebook, ensure that the notebook's Python environment contains the required dependencies. The environment created by `uv sync` is separate from Colab's notebook kernel.
 
+Add new dependencies to project:
+
+```python
+!uv add <Dependency name>
+```
+
 ## Dataset
 
 The project uses a knee osteoarthritis dataset containing X-ray images with severity labels.
 
-Dataset source: TODO
+Dataset source: https://data.mendeley.com/datasets/56rmx5bjcr/1
 
 The dataset is stored separately from GitHub.
-
-All experiments must use the same training, validation and test splits.
 
 ## Collaboration
 
@@ -133,11 +136,7 @@ Each team member works on their own Git branch:
 4. Commit and push your work.
 5. Create a pull request for review before merging into `main`.
 
-Avoid editing another member's experiment notebook without coordinating first.
-
 Reusable functions should be placed in `src/` rather than duplicated across notebooks.
-
-Do not commit datasets, model checkpoints, credentials or large generated files.
 
 ## Evaluation
 

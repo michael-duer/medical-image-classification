@@ -44,8 +44,8 @@ The structure may change as the project develops.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/USERNAME/REPOSITORY.git
-cd REPOSITORY
+git clone https://github.com/michael-duer/medical-image-classification.git
+cd medical-image-classification
 ```
 
 ### 2. Install uv
@@ -114,29 +114,18 @@ Add new dependencies to project:
 
 ## Dataset
 
-The project uses a knee osteoarthritis dataset containing X-ray images with severity labels.
+The project uses the **Knee Osteoarthritis Severity Grading Dataset** provided by  
+Chen, Pingjun (2018) via Mendeley Data (doi: [10.17632/56rmx5bjcr.1](https://doi.org/10.17632/56rmx5bjcr.1)).
 
-Dataset source: https://data.mendeley.com/datasets/56rmx5bjcr/1
+- **Source URL**: https://data.mendeley.com/datasets/56rmx5bjcr/1
+- **Sub‑folder used**: `ClsKLData/kneeKL224` (≈ 8 000 images)
+- **Partitioning**: Images are already split into three directories:
+  - `data/train` – ~70 % of the data
+  - `data/val` – ~15 % of the data
+  - `data/test` – ~15 % of the data
+    (All images from a single patient remain in one partition to avoid leakage.)
 
-The dataset is stored separately from GitHub.
-
-## Collaboration
-
-Each team member works on their own Git branch:
-
-- `custom-cnn`: Custom CNN implementation
-- `transfer-learning`: Pretrained models
-- `evaluation`: Dataset preparation and evaluation
-
-### Workflow
-
-1. Pull the latest changes from `main`.
-2. Switch to your personal branch.
-3. Implement and test your changes.
-4. Commit and push your work.
-5. Create a pull request for review before merging into `main`.
-
-Reusable functions should be placed in `src/` rather than duplicated across notebooks.
+This dataset is licensed under the Creative Commons Attribution 4.0 International license (CC BY‑4.0). Please see the original publication for full details and usage guidelines.
 
 ## Evaluation
 

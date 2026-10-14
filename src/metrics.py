@@ -6,15 +6,14 @@ from pathlib import Path
 import json
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from IPython.display import display
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score, precision_recall_fscore_support,
     confusion_matrix, roc_auc_score, roc_curve, cohen_kappa_score, mean_absolute_error)
 
 
 def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
-                         output_dir='metrics_output', class_names=None, logits=None):
+                         output_dir='metrics_output', class_names=None, logits=None, show_plots=True,save_plots=False):
     """Evaluate predictions; provide y_true and either y_prob, logits, or y_pred.
 
     y_true: shape (N,), integer labels 0..4.
@@ -49,8 +48,9 @@ def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
     if len(yp) != len(yt) or not np.all(np.isin(yp, labels)):
         raise ValueError('y_pred must match y_true length and contain labels 0..4.')
 
-    out = Path(output_dir) / model_name
-    out.mkdir(parents=True, exist_ok=True)
+    if save_plots:
+        out = Path(output_dir) / model_name
+        out.mkdir(parents=True, exist_ok=True)
     precision, recall, f1, support = precision_recall_fscore_support(
         yt, yp, labels=labels, zero_division=0)
     per_class = pd.DataFrame({'class': names, 'precision': precision, 'recall': recall,
@@ -61,7 +61,8 @@ def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
         auc = float(roc_auc_score(binary, probs[:, k])) if (probs is not None and len(np.unique(binary)) == 2) else np.nan
         aucs.append(auc)
     per_class['auroc_ovr'] = aucs
-    per_class.to_csv(out / 'per_class_metrics.csv', index=False)
+    if save_plots:
+        per_class.to_csv(out / 'per_class_metrics.csv', index=False)
 
     cm = confusion_matrix(yt, yp, labels=labels)
     def plot_cm(normalized):
@@ -80,7 +81,17 @@ def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
                         ha='center', va='center', color='white' if data[i,j] > data.max()/2 else 'black')
         fig.colorbar(im, ax=ax)
         fig.tight_layout()
-        fig.savefig(out / ('normalized_confusion_matrix.png' if normalized else 'confusion_matrix.png'), dpi=180)
+        #fig.savefig(out / ('normalized_confusion_matrix.png' if normalized else 'confusion_matrix.png'), dpi=180)
+        if save_plots:
+            filename = (
+                'normalized_confusion_matrix.png'
+                if normalized else 'confusion_matrix.png'
+            )
+            fig.savefig(out / filename, dpi=180)
+
+        if show_plots:
+            plt.show()
+
         plt.close(fig)
     plot_cm(False)
     plot_cm(True)
@@ -92,7 +103,13 @@ def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
     ax.set(xticks=x, xticklabels=names, ylim=(0, 1.05), ylabel='Score', title='Per-class classification metrics')
     ax.legend()
     fig.tight_layout()
-    fig.savefig(out / 'per_class_metrics.png', dpi=180)
+    #fig.savefig(out / 'per_class_metrics.png', dpi=180)
+    if save_plots:
+        fig.savefig(out / 'per_class_metrics.png', dpi=180)
+
+    if show_plots:
+        plt.show()
+
     plt.close(fig)
 
     if probs is not None:
@@ -108,7 +125,13 @@ def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
             ax.set(xlabel='False positive rate', ylabel='True positive rate', title='One-vs-rest ROC curves')
             ax.legend()
             fig.tight_layout()
-            fig.savefig(out / 'roc_curves.png', dpi=180)
+            #fig.savefig(out / 'roc_curves.png', dpi=180)
+            if save_plots:
+                fig.savefig(out / 'roc_curves.png', dpi=180)
+
+            if show_plots:
+                plt.show()
+
         plt.close(fig)
 
     _, _, macro_f1, _ = precision_recall_fscore_support(yt, yp, labels=labels, average='macro', zero_division=0)
@@ -123,41 +146,90 @@ def evaluate_predictions(y_true, y_prob=None, y_pred=None, *, model_name='cnn',
         'mae': float(mean_absolute_error(yt, yp)),
         'macro_auroc_ovr': float(np.mean(present_aucs)) if len(present_aucs) == 5 else None,
     }
-    with open(out / 'metrics.json', 'w') as f:
-        json.dump(results, f, indent=2, allow_nan=False)
+    if save_plots:
+        with open(out / 'metrics.json', 'w') as f:
+            json.dump(results, f, indent=2, allow_nan=False)
     return results
 
 
-def plot_training_history(history, *, model_name='cnn', output_dir='metrics_output'):
-    """Save PyTorch training/validation accuracy and loss curves.
-
-    history is a nonempty list of per-epoch dictionaries from the shared
-    PyTorch notebook, with epoch, train_accuracy, val_accuracy,
-    train_loss, and val_loss.
+def plot_training_history(history,*,model_name='cnn',output_dir='metrics_output',show_plots=True,save_plots=False):
     """
+    Plot training and validation accuracy/loss curves.
+
+    show_plots=True  -> Display graphs in Jupyter notebook.
+    save_plots=True  -> Save graphs as PNG files.
+    """
+
     if not isinstance(history, list) or not history:
         raise ValueError('history must be a nonempty list of per-epoch dictionaries.')
+
     keys = ('train_accuracy', 'val_accuracy', 'train_loss', 'val_loss')
+
     try:
-        data = {k: np.asarray([row[k] for row in history], dtype=float) for k in keys}
-        epochs = np.asarray([row['epoch'] for row in history], dtype=float)
+        data = {
+            k: np.asarray([row[k] for row in history], dtype=float)
+            for k in keys
+        }
+        epochs = np.asarray(
+            [row['epoch'] for row in history], dtype=float
+        )
+
     except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError('Each epoch must contain epoch, train_accuracy, val_accuracy, train_loss, val_loss.') from exc
-    if not np.all(np.isfinite(epochs)) or any(not np.all(np.isfinite(v)) for v in data.values()):
-        raise ValueError('Epochs, accuracy and loss values must be finite.')
-    out = Path(output_dir) / model_name
-    out.mkdir(parents=True, exist_ok=True)
+        raise ValueError(
+            'Each epoch must contain epoch, train_accuracy, '
+            'val_accuracy, train_loss, val_loss.'
+        ) from exc
+
+    if not np.all(np.isfinite(epochs)) or any(
+        not np.all(np.isfinite(v)) for v in data.values()
+    ):
+        raise ValueError(
+            'Epochs, accuracy and loss values must be finite.'
+        )
+
+    # Create output folder only when saving
+    if save_plots:
+        out = Path(output_dir) / model_name
+        out.mkdir(parents=True, exist_ok=True)
+
     saved = {}
+
     for metric, ylabel in [('accuracy', 'Accuracy'), ('loss', 'Loss')]:
+
         fig, ax = plt.subplots(figsize=(8, 5))
-        ax.plot(epochs, data[f'train_{metric}'], label=f'Training {metric}')
-        ax.plot(epochs, data[f'val_{metric}'], label=f'Validation {metric}')
-        ax.set(xlabel='Epoch', ylabel=ylabel, title=f'{model_name}: training and validation {metric}')
+
+        ax.plot(
+            epochs,
+            data[f'train_{metric}'],
+            label=f'Training {metric}'
+        )
+
+        ax.plot(
+            epochs,
+            data[f'val_{metric}'],
+            label=f'Validation {metric}'
+        )
+
+        ax.set(
+            xlabel='Epoch',
+            ylabel=ylabel,
+            title=f'{model_name}: Training and Validation {metric}'
+        )
+
         ax.legend()
         ax.grid(alpha=0.25)
         fig.tight_layout()
-        filename = out / f'training_validation_{metric}.png'
-        fig.savefig(filename, dpi=180)
+
+        # Optional saving
+        if save_plots:
+            filename = out / f'training_validation_{metric}.png'
+            fig.savefig(filename, dpi=180, bbox_inches='tight')
+            saved[metric] = str(filename)
+
+        # Optional display in notebook
+        if show_plots:
+            display(fig)
+
         plt.close(fig)
-        saved[metric] = str(filename)
+
     return saved

@@ -7,6 +7,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.datasets.folder import default_loader
+from torchvision.transforms import functional as TF
+from torchvision.transforms import InterpolationMode
 
 
 class BalancedAugmentedDataset(Dataset):
@@ -84,17 +86,40 @@ class BalancedAugmentedDataset(Dataset):
         image = default_loader(path)
 
         if augment:
+            # Remember original dimensions
+            original_width, original_height = image.size
+
+            # Reflect padding before rotation
+            padding = max(
+                8,
+                round(min(original_width, original_height) * 0.10)
+            )
+
+            image = TF.pad(
+                image,
+                padding=padding,
+                padding_mode="reflect"
+            )
+
+            # Random rotation between -5 and +5 degrees
             angle = random.uniform(
                 -self.max_rotation,
                 self.max_rotation
             )
-            image = transforms.functional.rotate(
+
+            image = TF.rotate(
                 image,
-                angle,
-                interpolation=transforms.InterpolationMode.BILINEAR,
-                fill=0
+                angle=angle,
+                interpolation=InterpolationMode.BILINEAR
             )
 
+            # Crop back to original dimensions
+            image = TF.center_crop(
+                image,
+                output_size=(original_height, original_width)
+            )
+
+        # Resize, convert to tensor, and normalize
         image = self.transform(image)
 
         return image, label

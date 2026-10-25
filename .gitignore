@@ -1,2 +1,23 @@
 example_data/
 .DS_Store
+
+# Trained models: only models in models/ are uploaded
+*.pth
+*.pt
+!models/*.pth
+!models/*.pt
+
+# Data (too large for GitHub)
+data.zip
+
+# My local working folder
+notebooks/exclude/
+
+# Generated outputs
+output/
+metrics_output/
+
+# Python / Jupyter / environment files
+__pycache__/
+.ipynb_checkpoints/
+.venv/
